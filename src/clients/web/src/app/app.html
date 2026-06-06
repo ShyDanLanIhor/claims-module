@@ -1,0 +1,28 @@
+<mat-toolbar color="primary" class="app-toolbar">
+  <a routerLink="/claims" class="brand">
+    <mat-icon>gavel</mat-icon>
+    <span>Claims Module</span>
+  </a>
+  <span class="spacer"></span>
+  <button mat-button [matMenuTriggerFor]="userMenu" aria-label="Switch user">
+    <mat-icon>account_circle</mat-icon>
+    {{ auth.currentUser().name }} · {{ auth.currentUser().role }}
+    <mat-icon>arrow_drop_down</mat-icon>
+  </button>
+  <mat-menu #userMenu="matMenu">
+    @for (user of auth.users; track user.id) {
+      <button mat-menu-item (click)="auth.switchUser(user.id)">
+        <mat-icon>{{ user.id === auth.currentUser().id ? 'check' : 'person' }}</mat-icon>
+        {{ user.name }} — {{ user.role }}
+      </button>
+    }
+  </mat-menu>
+</mat-toolbar>
+
+@if (loading.isLoading()) {
+  <mat-progress-bar mode="indeterminate" />
+}
+
+<main class="app-content">
+  <router-outlet />
+</main>

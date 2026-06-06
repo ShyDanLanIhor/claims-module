@@ -1,0 +1,87 @@
+
+// Include theming for Angular Material with `mat.theme()`.
+// This Sass mixin will define CSS variables that are used for styling Angular Material
+// components according to the Material 3 design spec.
+// Learn more about theming and how to use it for your application's
+// custom components at https://material.angular.dev/guide/theming
+@use '@angular/material' as mat;
+@use './theme-colors' as theme; // custom M3 palette generated from brand colours (FRS §11.4)
+
+html {
+  height: 100%;
+  @include mat.theme((
+    color: (
+      primary: theme.$primary-palette,
+      tertiary: theme.$tertiary-palette,
+    ),
+    typography: Roboto,
+    density: 0,
+  ));
+}
+
+body {
+  // Default the application to a light color theme. This can be changed to
+  // `dark` to enable the dark color theme, or to `light dark` to defer to the
+  // user's system settings.
+  color-scheme: light;
+
+  // Set a default background, font and text colors for the application using
+  // Angular Material's system-level CSS variables. Learn more about these
+  // variables at https://material.angular.dev/guide/system-variables
+  background-color: var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+  font: var(--mat-sys-body-medium);
+
+  // Reset the user agent margin.
+  margin: 0;
+  height: 100%;
+}
+/* You can add global styles to this file, and also import other style files */
+
+// Snackbar severity colours (NotificationService panelClass).
+.snack-success {
+  --mdc-snackbar-container-color: #2e7d32;
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+}
+
+.snack-error {
+  --mdc-snackbar-container-color: #c62828;
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+}
+
+.snack-warning {
+  --mdc-snackbar-container-color: #ef6c00;
+  --mdc-snackbar-supporting-text-color: #fff;
+  --mat-snack-bar-button-color: #fff;
+}
+
+// Search box inside a "searchable" mat-select panel. The panel renders in the CDK overlay (outside
+// component view encapsulation), so these styles must live globally and are scoped via panelClass.
+.searchable-panel {
+  .select-search {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    padding: 0.5rem 0.75rem;
+    background: var(--mat-sys-surface-container, #fff);
+
+    input {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid var(--mat-sys-outline-variant, #c9c9cc);
+      border-radius: 6px;
+      font: inherit;
+      outline: none;
+    }
+  }
+
+  .select-empty {
+    padding: 0.5rem 1rem;
+    color: var(--mat-sys-on-surface-variant, #777);
+    font-size: 0.85rem;
+  }
+}
+

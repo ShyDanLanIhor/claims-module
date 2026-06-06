@@ -1,0 +1,21 @@
+# Azure Developer CLI (azd) manifest. Maps the two deployable services to the resources provisioned
+# by iac/main.bicep (matched via the `azd-service-name` resource tags). Run: `azd up`.
+name: claims-module
+metadata:
+  template: claims-module@1.0.0
+
+infra:
+  provider: bicep
+  path: iac
+  module: main
+
+services:
+  api:
+    project: ./src/api/ClaimsModule.API
+    language: dotnet
+    host: appservice
+  web:
+    project: ./src/clients/web
+    language: js
+    host: staticwebapp
+    dist: dist/claims-module-web/browser

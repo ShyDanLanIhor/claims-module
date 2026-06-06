@@ -1,0 +1,20 @@
+.badge {
+  display: inline-block;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.4;
+  white-space: nowrap;
+  color: #fff;
+  background: #607d8b;
+}
+
+// FRS §11.1 colour scheme.
+.badge[data-status='Draft'] { background: #9e9e9e; }
+.badge[data-status='Open'] { background: #1976d2; }
+.badge[data-status='UnderInvestigation'] { background: #f57c00; }
+.badge[data-status='PendingPayment'] { background: #7b1fa2; }
+.badge[data-status='Closed'] { background: #388e3c; }
+.badge[data-status='Reopened'] { background: #ffb300; color: #3e2723; }
+.badge[data-status='Withdrawn'] { background: #455a64; }

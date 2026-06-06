@@ -1,0 +1,361 @@
+@if (detail(); as claim) {
+  <div class="detail-header">
+    <div class="title-row">
+      <h1>{{ claim.claimNumber }}</h1>
+      <button mat-icon-button (click)="copyClaimNumber(claim.claimNumber)" matTooltip="Copy claim number" aria-label="Copy claim number">
+        <mat-icon>content_copy</mat-icon>
+      </button>
+      <app-status-badge [status]="claim.status" />
+      @if (claim.managerOverrideApplied) {
+        <span class="override-chip" matTooltip="Manager override applied for aggregate limit">Override</span>
+      }
+      <span class="spacer"></span>
+      @if (claim.allowedNextStatuses.length) {
+        <button mat-flat-button color="primary" [matMenuTriggerFor]="statusMenu">
+          <mat-icon>swap_horiz</mat-icon> Change status
+        </button>
+        <mat-menu #statusMenu="matMenu">
+          @for (next of claim.allowedNextStatuses; track next) {
+            <button mat-menu-item (click)="transition(next)">{{ next }}</button>
+          }
+        </mat-menu>
+      }
+    </div>
+    <div class="meta">
+      <span><strong>Policy:</strong> {{ claim.policyNumber ?? 'Not linked' }}</span>
+      <span><strong>Client:</strong> {{ claim.clientName ?? '—' }}</span>
+      <span><strong>Loss date:</strong> {{ claim.lossEvent?.lossDate | date: 'mediumDate' }}</span>
+      <span><strong>Cause:</strong> {{ claim.lossEvent?.causeOfLossCode ?? '—' }}</span>
+      <span><strong>Handler:</strong> {{ handlerName(claim.assignedHandlerId) }}</span>
+    </div>
+  </div>
+
+  <mat-tab-group [selectedIndex]="selectedTab()" (selectedIndexChange)="selectedTab.set($event)">
+    <!-- Overview -->
+    <mat-tab label="Overview">
+      <div class="tab-body">
+        <dl class="overview">
+          <dt>Description</dt>
+          <dd>{{ claim.lossEvent?.lossDescription }}</dd>
+          <dt>Location</dt>
+          <dd>{{ claim.lossEvent?.lossLocation ?? '—' }}</dd>
+          <dt>Estimated loss</dt>
+          <dd>{{ claim.lossEvent?.estimatedLossAmount | currency }}</dd>
+          <dt>Severity</dt>
+          <dd>
+            @if (claim.severity) {
+              <span class="severity-chip severity-{{ claim.severity.toLowerCase() }}">{{ claim.severity }}</span>
+            } @else {
+              —
+            }
+          </dd>
+          <dt>Reported</dt>
+          <dd>{{ claim.reportedDate | date: 'medium' }}</dd>
+          <dt>Notes</dt>
+          <dd class="notes-edit">
+            <mat-form-field appearance="outline" class="notes-field">
+              <textarea matInput rows="3" maxlength="2000" [formControl]="notesControl" placeholder="Add notes…"></textarea>
+              <mat-hint align="end">{{ notesControl.value.length }} / 2000</mat-hint>
+            </mat-form-field>
+            <button mat-stroked-button (click)="saveNotes()" [disabled]="notesControl.pristine || notesControl.invalid || actionPending()">
+              <mat-icon>save</mat-icon> Save notes
+            </button>
+          </dd>
+        </dl>
+      </div>
+    </mat-tab>
+
+    <!-- Parties -->
+    <mat-tab label="Parties ({{ claim.parties.length }})">
+      <div class="tab-body">
+        <div class="subsection-header">
+          <button mat-stroked-button (click)="showAddParty.set(!showAddParty())">
+            <mat-icon>person_add</mat-icon> Add party
+          </button>
+        </div>
+
+        @if (showAddParty()) {
+          <form class="add-party" [formGroup]="addPartyForm">
+            <mat-form-field appearance="outline">
+              <mat-label>Role</mat-label>
+              <mat-select formControlName="partyRole">
+                @for (role of partyRoles; track role) { <mat-option [value]="role">{{ role }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Type</mat-label>
+              <mat-select formControlName="partyType">
+                @for (type of partyTypes; track type) { <mat-option [value]="type">{{ type }}</mat-option> }
+              </mat-select>
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>First name</mat-label>
+              <input matInput formControlName="firstName" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Last name</mat-label>
+              <input matInput formControlName="lastName" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Company</mat-label>
+              <input matInput formControlName="companyName" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Email</mat-label>
+              <input matInput formControlName="email" />
+            </mat-form-field>
+            <mat-form-field appearance="outline">
+              <mat-label>Phone</mat-label>
+              <input matInput formControlName="phone" />
+            </mat-form-field>
+            <button mat-flat-button color="primary" (click)="addPartyRow()" [disabled]="actionPending()">Add</button>
+          </form>
+        }
+
+        @for (party of claim.parties; track party.id) {
+          <div class="party-row" [class.inactive]="!party.isActive">
+            <mat-icon>{{ party.partyType === 'Company' ? 'business' : 'person' }}</mat-icon>
+            <span class="role">{{ party.partyRole }}</span>
+            <span class="name">
+              {{ party.partyType === 'Company' ? party.companyName : party.firstName + ' ' + party.lastName }}
+            </span>
+            <span class="contact">{{ party.email }} {{ party.phone }}</span>
+            @if (!party.isActive) { <span class="muted">(removed)</span> }
+            <span class="spacer"></span>
+            @if (canRemoveParty(party)) {
+              <button mat-icon-button color="warn" (click)="removeParty(party)" [disabled]="actionPending()" matTooltip="Remove party" aria-label="Remove party">
+                <mat-icon>delete</mat-icon>
+              </button>
+            }
+          </div>
+        } @empty {
+          <p class="muted">No parties recorded.</p>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- Reserves -->
+    <mat-tab label="Reserves">
+      <div class="tab-body">
+        @if (reserves(); as r) {
+          <div class="summary-cards">
+            @for (component of r.components; track component.id) {
+              <mat-card appearance="outlined" class="summary-card">
+                <div class="card-title">{{ component.component }}</div>
+                <div class="card-amount">{{ component.currentAmount | currency }}</div>
+                @if (component.pendingAmount) {
+                  <div class="card-pending">Pending: {{ component.pendingAmount | currency }}</div>
+                }
+              </mat-card>
+            }
+            <mat-card appearance="outlined" class="summary-card total">
+              <div class="card-title">Total approved</div>
+              <div class="card-amount">{{ r.totalApproved | currency }}</div>
+              @if (r.totalPending) { <div class="card-pending">Pending: {{ r.totalPending | currency }}</div> }
+            </mat-card>
+          </div>
+
+          <div class="add-reserve-bar">
+            <button mat-stroked-button color="primary" (click)="showAddReserve.set(!showAddReserve())">
+              <mat-icon>{{ showAddReserve() ? 'close' : 'add' }}</mat-icon>
+              {{ showAddReserve() ? 'Cancel' : 'Add reserve' }}
+            </button>
+          </div>
+          @if (showAddReserve()) {
+            <div class="add-reserve-panel">
+              <form class="add-reserve" [formGroup]="addReserveForm">
+                <mat-form-field appearance="outline">
+                  <mat-label>Component</mat-label>
+                  <mat-select formControlName="component">
+                    @for (c of reserveComponents; track c) { <mat-option [value]="c">{{ c }}</mat-option> }
+                  </mat-select>
+                </mat-form-field>
+                <mat-form-field appearance="outline">
+                  <mat-label>Amount</mat-label>
+                  <input matInput type="number" formControlName="amount" />
+                  <span matTextPrefix>$&nbsp;</span>
+                </mat-form-field>
+                <mat-form-field appearance="outline" class="grow">
+                  <mat-label>Reason</mat-label>
+                  <input matInput formControlName="changeReason" />
+                </mat-form-field>
+                <button mat-flat-button color="primary" (click)="submitReserve()" [disabled]="actionPending()">
+                  <mat-icon>save</mat-icon> Submit
+                </button>
+              </form>
+              @if (reserveAuthorityHint(); as hint) {
+                <p class="authority" [class.warn]="hint.level === 'warn'">
+                  <mat-icon>{{ hint.icon }}</mat-icon> {{ hint.text }}
+                </p>
+              }
+            </div>
+          }
+
+          <table mat-table [dataSource]="r.history" class="history-table">
+            <ng-container matColumnDef="createdAt">
+              <th mat-header-cell *matHeaderCellDef>Date</th>
+              <td mat-cell *matCellDef="let t">{{ t.createdAt | date: 'short' }}</td>
+            </ng-container>
+            <ng-container matColumnDef="component">
+              <th mat-header-cell *matHeaderCellDef>Component</th>
+              <td mat-cell *matCellDef="let t">{{ t.component }}</td>
+            </ng-container>
+            <ng-container matColumnDef="transactionType">
+              <th mat-header-cell *matHeaderCellDef>Type</th>
+              <td mat-cell *matCellDef="let t">{{ t.transactionType }}</td>
+            </ng-container>
+            <ng-container matColumnDef="amount">
+              <th mat-header-cell *matHeaderCellDef class="num">Amount</th>
+              <td mat-cell *matCellDef="let t" class="num" [class.pos]="t.amount >= 0" [class.neg]="t.amount < 0">
+                {{ t.amount | currency }}
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="approvalStatus">
+              <th mat-header-cell *matHeaderCellDef>Approval</th>
+              <td mat-cell *matCellDef="let t">{{ t.approvalStatus }}</td>
+            </ng-container>
+            <ng-container matColumnDef="postingStatus">
+              <th mat-header-cell *matHeaderCellDef>GL</th>
+              <td mat-cell *matCellDef="let t">
+                <span
+                  class="gl-status"
+                  [class.gl-posted]="t.postingStatus === 'Posted'"
+                  [class.gl-failed]="t.postingStatus === 'Failed'"
+                  >{{ t.postingStatus }}</span
+                >
+              </td>
+            </ng-container>
+            <ng-container matColumnDef="submittedBy">
+              <th mat-header-cell *matHeaderCellDef>Submitted by</th>
+              <td mat-cell *matCellDef="let t">{{ userName(t.submittedByUserId) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="approvedBy">
+              <th mat-header-cell *matHeaderCellDef>Approved by</th>
+              <td mat-cell *matCellDef="let t">{{ userName(t.approvedByUserId) }}</td>
+            </ng-container>
+            <ng-container matColumnDef="actions">
+              <th mat-header-cell *matHeaderCellDef></th>
+              <td mat-cell *matCellDef="let t">
+                @if (t.approvalStatus === 'PendingApproval') {
+                  @if (canApproveReserves()) {
+                    <button mat-button color="primary" (click)="approve(t)" [disabled]="actionPending()">Approve</button>
+                    <button mat-button color="warn" (click)="reject(t)" [disabled]="actionPending()">Reject</button>
+                  }
+                  @if (isOwnPending(t)) {
+                    <button mat-button (click)="retract(t)" [disabled]="actionPending()">Retract</button>
+                  }
+                }
+                @if (canRetryGlPosting(t)) {
+                  <button mat-button color="warn" (click)="retryGlPosting(t)" [disabled]="actionPending()"
+                    matTooltip="Re-queue GL posting that previously failed">
+                    <mat-icon>refresh</mat-icon> Retry GL
+                  </button>
+                }
+              </td>
+            </ng-container>
+
+            <tr mat-header-row *matHeaderRowDef="reserveColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: reserveColumns"></tr>
+          </table>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- Documents -->
+    <mat-tab label="Documents ({{ documents().length }})">
+      <div class="tab-body">
+        <div class="upload-section">
+          <mat-form-field appearance="outline" class="doc-type-field">
+            <mat-label>Document type</mat-label>
+            <mat-select
+              [value]="selectedDocumentType()"
+              (valueChange)="selectedDocumentType.set($event)"
+              [disabled]="uploadProgress() !== null"
+            >
+              @for (type of documentTypes(); track type) {
+                <mat-option [value]="type">{{ type }}</mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+          <button mat-stroked-button (click)="fileInput.click()" [disabled]="uploadProgress() !== null">
+            <mat-icon>upload</mat-icon> Upload document
+          </button>
+          <input #fileInput type="file" hidden (change)="onFileSelected($event)" />
+        </div>
+
+        @if (uploadProgress() !== null) {
+          <div class="upload-progress">
+            <mat-progress-bar mode="determinate" [value]="uploadProgress() ?? 0" />
+            <span class="muted">{{ uploadProgress() }}%</span>
+          </div>
+        }
+
+        @for (doc of documents(); track doc.id) {
+          <div class="doc-row">
+            <mat-icon>description</mat-icon>
+            <span class="name">{{ doc.documentName }}</span>
+            <span class="muted">{{ doc.documentType }} · {{ (doc.fileSizeBytes / 1024) | number: '1.0-0' }} KB</span>
+            <span class="muted">{{ doc.uploadedAt | date: 'short' }}</span>
+            <span class="muted">{{ userName(doc.uploadedByUserId) }}</span>
+            <button mat-button color="primary" (click)="download(doc)">
+              <mat-icon>download</mat-icon> Download
+            </button>
+          </div>
+        } @empty {
+          <p class="muted">No documents uploaded.</p>
+        }
+      </div>
+    </mat-tab>
+
+    <!-- Audit Log -->
+    <mat-tab label="Audit Log">
+      <div class="tab-body">
+        <table mat-table [dataSource]="audit()" class="audit-table">
+          <ng-container matColumnDef="createdAt">
+            <th mat-header-cell *matHeaderCellDef>When</th>
+            <td mat-cell *matCellDef="let e">{{ e.createdAt | date: 'short' }}</td>
+          </ng-container>
+          <ng-container matColumnDef="eventType">
+            <th mat-header-cell *matHeaderCellDef>Event</th>
+            <td mat-cell *matCellDef="let e"><span class="event-badge">{{ e.eventType }}</span></td>
+          </ng-container>
+          <ng-container matColumnDef="description">
+            <th mat-header-cell *matHeaderCellDef>Description</th>
+            <td mat-cell *matCellDef="let e">{{ e.description }}</td>
+          </ng-container>
+          <ng-container matColumnDef="user">
+            <th mat-header-cell *matHeaderCellDef>User</th>
+            <td mat-cell *matCellDef="let e">{{ userName(e.createdByUserId) }}</td>
+          </ng-container>
+          <ng-container matColumnDef="related">
+            <th mat-header-cell *matHeaderCellDef>Related</th>
+            <td mat-cell *matCellDef="let e">
+              @if (e.relatedEntityId && relatedTabIndex(e.relatedEntityType) !== null) {
+                <a class="related-link" (click)="goToRelated(e.relatedEntityType)">{{ e.relatedEntityType }}</a>
+              } @else {
+                {{ e.relatedEntityType ?? '—' }}
+              }
+            </td>
+          </ng-container>
+
+          <tr mat-header-row *matHeaderRowDef="auditColumns"></tr>
+          <tr mat-row *matRowDef="let row; columns: auditColumns"></tr>
+        </table>
+        @if (audit().length === 0) { <p class="muted">No audit entries.</p> }
+        @if (auditTotal() > 0) {
+          <mat-paginator
+            [length]="auditTotal()"
+            [pageSize]="auditPageSize()"
+            [pageIndex]="auditPageIndex()"
+            [pageSizeOptions]="[25, 50, 100]"
+            (page)="onAuditPage($event)"
+          />
+        }
+      </div>
+    </mat-tab>
+  </mat-tab-group>
+} @else {
+  <div class="detail-skeleton">
+    <app-skeleton [widths]="['45%', '75%', '60%', '85%', '55%']" />
+  </div>
+}

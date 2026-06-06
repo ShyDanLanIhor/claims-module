@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "claims-web",
+      "runtimeExecutable": "npm",
+      "runtimeArgs": ["--prefix", "src/clients/web", "start"],
+      "port": 4200
+    }
+  ]
+}

@@ -1,0 +1,137 @@
+.page-header h1 {
+  font: var(--mat-sys-headline-small);
+  margin: 0 0 1rem;
+}
+
+.step-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding-top: 1rem;
+  max-width: 900px;
+}
+
+.row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+
+  mat-form-field {
+    flex: 1 1 200px;
+  }
+}
+
+.full {
+  width: 100%;
+}
+
+.grow {
+  flex: 1 1 200px;
+}
+
+.server-errors {
+  display: flex;
+  gap: 0.6rem;
+  align-items: flex-start;
+  margin: 0 0 1rem;
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: #fdecea;
+  color: #b3261e;
+
+  ul { margin: 0.25rem 0 0; padding-left: 1.1rem; }
+  strong { font-weight: 600; }
+}
+
+.policy-info {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0.25rem 0 0.5rem;
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.badge {
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #fff;
+
+  &.ok { background: #388e3c; }
+  &.warn { background: #f57c00; }
+  &.cov { background: #455a64; }
+}
+
+.advisory {
+  color: #f57c00;
+  font-size: 0.85rem;
+}
+
+.subsection {
+  margin: 1rem 0;
+
+  .subsection-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 0.5rem;
+
+    h3 {
+      margin: 0;
+    }
+  }
+}
+
+.entry-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  margin-bottom: 0.5rem;
+
+  mat-form-field {
+    flex: 1 1 140px;
+  }
+}
+
+.authority {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  color: #388e3c;
+  font-weight: 500;
+
+  &.warn {
+    color: #f57c00;
+  }
+}
+
+.review {
+  margin-top: 1rem;
+
+  dl {
+    display: grid;
+    grid-template-columns: 160px 1fr;
+    gap: 0.25rem 1rem;
+  }
+
+  dt {
+    font-weight: 600;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  dd {
+    margin: 0;
+  }
+}
+
+.step-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 1.5rem;
+}
