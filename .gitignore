@@ -402,3 +402,10 @@ Thumbs.db
 # ===========================================================================
 docs/*.docx
 docs/*.pdf
+
+# ===========================================================================
+# Internal AI-agent operational guide — kept locally only, NOT a deliverable
+# (contains Azure resource identifiers + working notes; the public-facing docs
+#  are README.md / ARCHITECTURE.md / AI-WORKFLOW.md)
+# ===========================================================================
+/CLAUDE.md
