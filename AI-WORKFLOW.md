@@ -204,6 +204,19 @@ auto-approved reserve **posted to the simulated GL by the in-Azure Hangfire serv
 written — confirming the deployed stack (App Service + Azure SQL via Key Vault + Hangfire + Static Web App with
 CORS to the SWA origin) works exactly as designed.
 
+**From driving the deployed UI in a real browser (found only by testing live production):**
+23. *Deep-links / refresh 404'd on the Static Web App.* Clicking through from `/` worked, but navigating
+    directly to — or refreshing on — any Angular route (`/claims`, `/claims/{id}`) returned the SWA's
+    "404: Not found" page. Cause: no `staticwebapp.config.json`, so the SWA served paths literally instead of
+    falling back to the SPA's `index.html`; in-app router navigation hid the problem because it never hits the
+    server. Fixed by adding the config with `navigationFallback` → `/index.html`. The first attempt then
+    *failed the SWA deploy's own validation* — the exclude globs used `**` and SWA permits at most one `*` per
+    pattern — so it was corrected to single-wildcard patterns. Verified live: direct loads and refreshes of
+    `/claims` and `/claims/{id}` now render the app. This fix itself went through the PR-gated pipeline
+    (PR → required "Build & test" check → squash-merge → deploy), exercising branch protection on a real
+    change. A pure SPA-routing/hosting bug that unit/integration tests — and even the API smoke-test — cannot
+    catch; only loading the deployed front-end in a browser does.
+
 ## 6. Honest Assessment
 AI was most effective for boilerplate and mechanical breadth: entity/DTO/configuration/handler
 generation across many files, the EF migration, and first-draft documentation. It was also a strong
