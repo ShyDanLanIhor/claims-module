@@ -117,7 +117,7 @@
             <mat-icon>{{ party.partyType === 'Company' ? 'business' : 'person' }}</mat-icon>
             <span class="role">{{ party.partyRole }}</span>
             <span class="name">
-              {{ party.partyType === 'Company' ? party.companyName : party.firstName + ' ' + party.lastName }}
+              {{ party.partyType === 'Company' ? party.companyName : ((party.firstName || '') + ' ' + (party.lastName || '')).trim() }}
             </span>
             <span class="contact">{{ party.email }} {{ party.phone }}</span>
             @if (!party.isActive) { <span class="muted">(removed)</span> }

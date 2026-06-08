@@ -9,6 +9,44 @@ confidential spec docs are in `docs/*.docx` (gitignored; do not commit). Scope, 
 rules and conventions all come from those.
 
 ## Current status (2026-06)
+### 🚀 DEPLOYED & LIVE ON AZURE (2026-06-09) — the assessment is fully delivered
+- **Live URLs:** Frontend (SWA) https://jolly-ocean-0db0ca80f.7.azurestaticapps.net · API (App Service)
+  https://app-api-we6lhaipoe6g4.azurewebsites.net (`/swagger`, `/health`). **Region: Poland Central**
+  (the ONLY region that accepted trial SQL — West/North Europe, eastus2, westus2 all gated for free trial).
+  RG `rg-claims-prod`: app-api-we6lhaipoe6g4, sql-we6lhaipoe6g4.database.windows.net/`claimsdb`,
+  `stwe6lhaipoe6g4` (Blob), `kv-we6lhaipoe6g4`, `swa-we6lhaipoe6g4`, Log Analytics/App Insights.
+- **Repo: github.com/ShyDanLanIhor/claims-module (PUBLIC** — made public so branch protection works on the
+  free plan; security-swept, no secrets). **`main` is PROTECTED**: PR-only (no direct push, enforce_admins),
+  required check "Build & test", linear history, no force-push/deletion. **Future changes MUST go via PR**:
+  branch → PR → green "Build & test" → squash-merge → that merge's push deploys. `gh` authed as ShyDanLanIhor.
+- **Azure:** sub "Azure subscription 1" `52c92884-8b2c-4274-84ca-61c12c47aa6c`, tenant
+  `90bbbe61-b821-4552-9096-5c24750647a2`, **FREE TRIAL** (spending limit ON → no real charges; **30-day window**).
+  OIDC app reg clientId `7fe0d9b6-96c1-4a49-8f57-9602eda0f720` (Owner on sub; federated subject
+  `repo:ShyDanLanIhor/claims-module:environment:production`). GitHub vars AZURE_ENV_NAME=`claims-prod`,
+  AZURE_LOCATION=`polandcentral`; secrets AZURE_CLIENT/TENANT/SUBSCRIPTION_ID + AZURE_SQL_ADMIN_PASSWORD
+  (SQL pw saved at `%TEMP%\deploy-sql-password.txt`). **Tear down after demo:** `az group delete -n rg-claims-prod --yes`.
+- **⚠️ TOOLING (post-compact gotcha):** `az` + `gh` are installed (winget) but **NOT on the tool-shell PATH**
+  (installed after a prior session started). Prepend each call:
+  `$env:PATH="C:\Program Files\Microsoft SDKs\Azure\CLI2\wbin;C:\Program Files\GitHub CLI;$env:PATH"`. Both authed.
+  Trigger a deploy: `gh workflow run ci-cd --ref main` (a push/merge to main also triggers; after a force-push
+  the push itself triggers the run — don't also dispatch or you get a duplicate).
+- **Deploy/CI bugs found+fixed (all in `.github/workflows/ci-cd.yml` + `Program.cs` + SWA config):** (1) Hangfire
+  dashboard was mapped unconditionally → SQL init crash on the infra-free test host/CI runner → gated behind
+  `Hangfire:EnableServer` (Program.cs). (2) Trial-SQL region gating → switched to Poland Central. (3) ARM mangles
+  deployment-output casing (`AZURE_RESOURCE_GROUP`→`azurE_RESOURCE_GROUP`) → jq lowercases keys + rerun-safe
+  deploy name (run_id+attempt). (4) **SWA SPA deep-link/refresh 404** → added `src/clients/web/public/staticwebapp.config.json`
+  (`navigationFallback`→`/index.html`); first version used `**` (SWA allows ≤1 `*`) → corrected to single-`*`.
+- **Live UI verified comprehensively in a real browser (Claude in Chrome, deviceId `573e9d11-…`):** ALL §11 on
+  prod — dashboard (every filter, pagination, 7 badge colours, empty-state), FNOL create (policy typeahead +
+  in-force badge), 5 tabs, **Azure Blob document upload + SAS download (200)**, reserves (auto+manual approve→GL
+  Posted via cloud Hangfire, reject/retract, role-switch+gating, self-approval-422), notes save, add/remove party,
+  audit + related-link tab-jump, transitions (Draft→Open, Open→Closed-w/-justification, Closed→Reopened→Open),
+  422 amber-warn snackbar, CORS GET/POST/PUT/DELETE, responsive. Chrome-automation notes: mat-flat-button clicks
+  via injected JS DON'T fire (use find-ref or coordinate clicks); reactive-form text inputs need REAL keystrokes
+  (synthetic setVal is unreliable on the deployed bundle); renderer froze intermittently on long JS/some screenshots.
+- **OPEN minor cosmetic bug (not fixed):** party name renders "Wendy null" when lastName is null — template
+  `firstName + ' ' + lastName`. One-line fix in `claim-detail.html` → via PR. Low severity.
+
 - **Backend**: complete & green (Domain/Application/Persistence/Infrastructure/API). All FRS endpoints,
   business rules, GL/SLA Hangfire jobs, audit, conventions. `dotnet build` 0 errors; **67 unit + 9 integration + 12 FE tests pass**
   (unit: domain + ALL handler business rules — ApproveReserve self-approval/authority/BR-R-05, SubmitReserve BR-C-06/auto-GL,
