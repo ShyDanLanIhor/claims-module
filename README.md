@@ -4,6 +4,15 @@ A vertical slice of a **Claims Management** module — First Notice of Loss (FNO
 Reserve Management — for an insurance Policy Administration System. Built as a technical
 assessment (DICEUS, Fullstack .NET + Angular).
 
+[![ci-cd](https://github.com/ShyDanLanIhor/claims-module/actions/workflows/ci-cd.yml/badge.svg)](https://github.com/ShyDanLanIhor/claims-module/actions/workflows/ci-cd.yml)
+
+## Live deployment
+- **Frontend (Static Web App):** https://jolly-ocean-0db0ca80f.7.azurestaticapps.net
+- **API:** https://app-api-we6lhaipoe6g4.azurewebsites.net — [`/swagger`](https://app-api-we6lhaipoe6g4.azurewebsites.net/swagger) · [`/health`](https://app-api-we6lhaipoe6g4.azurewebsites.net/health)
+
+Deployed to Azure (Poland Central) via the GitHub Actions pipeline; every push to `main` re-provisions
+(idempotent), applies EF migrations, and redeploys the API + Static Web App.
+
 ## Stack
 - **Backend:** .NET 9, ASP.NET Core Web API, MediatR (CQRS), EF Core 9, FluentValidation, AutoMapper, Hangfire
 - **Orchestration:** .NET Aspire (AppHost + ServiceDefaults)
